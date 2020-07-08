@@ -15,6 +15,8 @@ import liusheng.handler.BootStrap;
 import liusheng.handler.DataInsert;
 import liusheng.handler.Handler;
 import liusheng.handler.HandlerContext;
+import liusheng.handler.acfun.handler.AcfunDocumentHandler;
+import liusheng.handler.acfun.handler.AcfunVideoHandler;
 import liusheng.handler.bilibili.handler.*;
 import liusheng.handler.bilibili.utils.BilibiliPatternUtils;
 import liusheng.handler.youtube.javafx.phone.handler.BilibiliSubVideoHandler;
@@ -154,10 +156,11 @@ public class Main extends Application {
                 .mainExecutorService(Executors.newFixedThreadPool(3))
                 .helpExecutorService(helpExecutorService)
                 .addHandler(new YoutubeVideoDownloaderPaneAddHandler("F:\\mp3", false))
-              //  .addHandler(new BilibiliVideoDownloaderPaneAddHandler("F:\\mp3", false))
+                //  .addHandler(new BilibiliVideoDownloaderPaneAddHandler("F:\\mp3", false))
                 .addHandler(new YoutubeDocumentHandler(fileRetryFailurerHandler))
                 .addHandler(new YoutubeDescriptionHandler())
                 .addHandler(new StateToDataHandler())
+
                 .addHandler(new BilibiliPageVideoHandler())
                 .addHandler(new BilibiliSubVideoHandler("80"))
                 .addHandler(new BilibiliDownloaderHandler("F:\\mp4"))
@@ -178,6 +181,9 @@ public class Main extends Application {
                 .helpExecutorService(helpExecutorService)
                 .addHandler(new BilibiliPageHandler())
                 .addHandler(new BilibiliSpaceHandler())
+                .addHandler(new AcfunDocumentHandler())
+                .addHandler(new AcfunVideoHandler())
+                .addHandler(new AxfunPaneVideoHandler(containerVBox, dataInsertDownloader))
                 .addHandler(new BilibiliPaneVideoHandler(containerVBox, dataInsertDownloader))
                 .addHandler(new SearchUrlHandler())
                 .addHandler(new YoutubeDocumentHandler(fileRetryFailurerHandler))

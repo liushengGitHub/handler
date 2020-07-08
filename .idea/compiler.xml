@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="kugeci" />
+        <module name="http" />
+        <module name="acfun" />
+        <module name="bilibili" />
+        <module name="soundcloud" />
+        <module name="youtube-javafx" />
+        <module name="gulixueyuan" />
+        <module name="instagram" />
+        <module name="dailymotion" />
+        <module name="common" />
+        <module name="huanmusic" />
+        <module name="app" />
+        <module name="common-javafx" />
+        <module name="youtube" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="common-net" target="8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

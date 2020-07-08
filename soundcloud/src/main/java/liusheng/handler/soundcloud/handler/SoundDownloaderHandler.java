@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -82,7 +83,8 @@ public class SoundDownloaderHandler extends AbstractRetryHandler {
                 inputStream.close();
                 return;
             }
-            DownloadUtils.copy(handlerContext, new DefaultDownloaderController(), inputStream, new FileOutputStream(file), "");
+            DownloadUtils.copy(handlerContext, new DefaultDownloaderController(), inputStream, new FileOutputStream(file), "",
+                    new AtomicLong(),new AtomicLong());
             System.out.println("结束" + file.getAbsolutePath().toString());
         }
     }

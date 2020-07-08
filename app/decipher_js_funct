@@ -1,3 +1,3 @@
-s/player/16a691a1/player_ias.vflset/zh_CN/base.js
-Fw
-var Fw=function(a){a=a.split("");Ew.AX(a,52);Ew.yJ(a,3);Ew.QX(a,1);Ew.QX(a,67);Ew.yJ(a,2);Ew.QX(a,8);return a.join("")};var Ew={yJ:function(a,b){a.splice(0,b)}, QX:function(a,b){var c=a[0];a[0]=a[b%a.length];a[b%a.length]=c}, AX:function(a){a.reverse()}};
+s/player/54668ca9/player_ias.vflset/zh_CN/base.js
+Pu
+var Pu=function(a){a=a.split("");Ou.Kt(a,78);Ou.uu(a,43);Ou.Kt(a,1);Ou.t2(a,3);Ou.Kt(a,8);return a.join("")};var Ou={uu:function(a,b){var c=a[0];a[0]=a[b%a.length];a[b%a.length]=c}, t2:function(a,b){a.splice(0,b)}, Kt:function(a){a.reverse()}};

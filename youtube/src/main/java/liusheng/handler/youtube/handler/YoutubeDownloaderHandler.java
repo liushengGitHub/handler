@@ -2,21 +2,32 @@ package liusheng.handler.youtube.handler;
 
 import liusheng.handler.*;
 import liusheng.handler.http.DefaultDownloaderController;
+import liusheng.handler.http.DownloadListener;
 import liusheng.handler.http.DownloaderController;
-import liusheng.handler.http.utils.ConverterListener;
-import liusheng.handler.http.utils.FileUtils;
+import liusheng.handler.http.utils.*;
 import liusheng.handler.youtube.handler.entity.VideoDetails;
 import liusheng.handler.youtube.handler.entity.VideoMeta;
 import liusheng.handler.youtube.handler.entity.YtFile;
-import liusheng.handler.http.utils.ProcessBuilderUtils;
-import liusheng.handler.http.utils.StringUtils;
 import liusheng.handler.youtube.utils.YoutubeRetrofitUtils;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
+import org.bytedeco.ffmpeg.avformat.AVIOInterruptCB;
+import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.javacpp.Loader;
+import org.bytedeco.javacpp.Pointer;
+import org.bytedeco.javacv.FFmpegFrameRecorder;
+import org.bytedeco.javacv.Frame;
+import org.bytedeco.javacv.FrameGrabber;
+import org.bytedeco.javacv.FrameRecorder;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.Buffer;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static liusheng.handler.http.utils.DownloadUtils.downloadFile;
@@ -31,6 +42,8 @@ public class YoutubeDownloaderHandler extends AbstractRetryHandler {
     private int mp3;
     private int height;
     private String dir;
+
+    private int mode = 0;
 
     public YoutubeDownloaderHandler(RetryFailurerHandler retryFailurerHandler, int mp3, int height, String dir) {
         super(retryFailurerHandler);
@@ -117,9 +130,167 @@ public class YoutubeDownloaderHandler extends AbstractRetryHandler {
         File targetFileMp3 = new File(channelDir, fileName + ".mp3").getAbsoluteFile();
         DownloaderController downloaderController = (DownloaderController) data.computeIfAbsent("downloadController", e -> new DefaultDownloaderController());
         downloaderController.setState(DownloaderController.EXECUTE);
-        CountDownLatch countDownLatch = new CountDownLatch(1);
+
         AtomicLong total = (AtomicLong) data.getOrDefault("total", new AtomicLong());
+        total.set(0);
         AtomicLong current = (AtomicLong) data.getOrDefault("current", new AtomicLong());
+        current.set(0);
+        if (mode == 0) {
+            // 边下载边合并
+            FFmpegFrameGrabber frameGrabber1 =
+                    new FFmpegFrameGrabber(getInputStream(audioFile.getUrl(), total));
+            // frameGrabber1.setFormat("webm");
+            FFmpegFrameGrabber frameGrabber2 =
+                    new FFmpegFrameGrabber(getInputStream(videoFile.getUrl(), total));
+            //frameGrabber2.setFormat("webm");
+
+            LinkedTransferQueue<Frame> frameBlockingQueue = new LinkedTransferQueue<>();
+            DownloadListener downloadListener = (DownloadListener) data.get("downloadListener");
+
+            mergeByGaggber(downloaderController, downloadListener, current, total, targetFile,
+                    defaultPipeline, frameGrabber1, frameGrabber2, frameBlockingQueue);
+
+        } else {
+            CountDownLatch countDownLatch = new CountDownLatch(1);
+            downloadAndMerge(handlerContext, fileName, audioFile, videoFile, data, originUrl, defaultPipeline, sourceAudioFile,
+                    sourceVideoFile, targetFile, targetFileMp3, downloaderController, countDownLatch, total, current);
+        }
+
+    }
+
+    private void mergeByGaggber(DownloaderController downloaderController, DownloadListener downloadListener, AtomicLong current, AtomicLong total, File targetFile, DefaultPipeline defaultPipeline, FFmpegFrameGrabber frameGrabber1, FFmpegFrameGrabber frameGrabber2, LinkedTransferQueue<Frame> frameBlockingQueue) {
+
+        CountDownLatch countDownLatchStart = new CountDownLatch(2);
+        CountDownLatch countDownLatchEnd = new CountDownLatch(2);
+
+        Runnable mp3Runnable = () -> {
+            try {
+                try {
+                    frameGrabber1.start();
+                } catch (FrameGrabber.Exception e) {
+
+                } finally {
+                    countDownLatchStart.countDown();
+                }
+
+                Frame frame = null;
+
+                while ((frame = frameGrabber1.grab()) != null && downloaderController.getState() != DownloaderController.EXCEPTION
+                        && downloaderController.getState() != DownloaderController.CANCEL) {
+                    frameBlockingQueue.transfer(frame);
+                }
+
+
+            } catch (Exception e) {
+                downloaderController.setState(DownloaderController.EXCEPTION);
+                e.printStackTrace();
+            } finally {
+                countDownLatchEnd.countDown();
+            }
+        };
+        Runnable mp4Runnable = () -> {
+            try {
+                try {
+                    frameGrabber2.start();
+                } catch (FrameGrabber.Exception e) {
+
+                } finally {
+                    countDownLatchStart.countDown();
+                }
+                Frame frame = null;
+
+                while ((frame = frameGrabber2.grab()) != null && downloaderController.getState() != DownloaderController.EXCEPTION
+                        && downloaderController.getState() != DownloaderController.CANCEL) {
+                    frameBlockingQueue.transfer(frame);
+                }
+            } catch (Exception e) {
+                downloaderController.setState(DownloaderController.EXCEPTION);
+                e.printStackTrace();
+            } finally {
+                countDownLatchEnd.countDown();
+            }
+        };
+
+        try {
+            defaultPipeline.getHelpExecutorService()
+                    .execute(mp3Runnable);
+            defaultPipeline.getHelpExecutorService()
+                    .execute(mp4Runnable);
+
+            countDownLatchStart.await();
+            FrameRecorder recorder = new FFmpegFrameRecorder(targetFile.getAbsoluteFile(), frameGrabber2.getImageWidth(), frameGrabber2.getImageHeight());
+            recorder.setFrameRate(frameGrabber2.getFrameRate() > 0 ? frameGrabber2.getFrameRate() : 30);
+            recorder.setSampleRate(frameGrabber1.getSampleRate());
+            recorder.setFormat("mp4");
+            recorder.setAudioChannels(frameGrabber1.getAudioChannels() == 0 ? 2 : frameGrabber1.getAudioChannels());
+            recorder.setVideoOption("preset", "ultrafast");
+            recorder.setVideoOption("threads", "5");
+            recorder.setVideoCodec(avcodec.AV_CODEC_ID_MPEG4);
+            recorder.setAudioCodec(avcodec.AV_CODEC_ID_MP3);
+            recorder.start();
+            while (!frameBlockingQueue.isEmpty() || countDownLatchEnd.getCount() != 0) {
+                Frame frame = frameBlockingQueue.peek();
+
+                if (frame != null && frame.samples != null) {
+                    current.addAndGet(getSize(frame.samples));
+                    if (Objects.nonNull(downloadListener)) {
+                        downloadListener.listen(current.get(), total.get());
+                    }
+                    recorder.setTimestamp(frame.timestamp);
+                    recorder.record(frame);
+
+                }
+                if (frame != null && frame.image != null) {
+                    current.addAndGet(getSize(frame.samples));
+                    if (Objects.nonNull(downloadListener)) {
+                        downloadListener.listen(current.get(), total.get());
+                    }
+                    recorder.setTimestamp(frame.timestamp);
+                    recorder.record(frame);
+                }
+
+
+                if (frame != null) {
+                    System.out.println(frame.timestamp / 1000);
+                    frameBlockingQueue.poll();
+                }
+
+            }
+            recorder.stop();
+            recorder.release();
+            frameGrabber1.stop();
+            frameGrabber1.release();
+            frameGrabber2.stop();
+            frameGrabber2.release();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private long getSize(Buffer[] samples) {
+        return Optional.ofNullable(samples)
+                .map(buffers -> {
+                    return Arrays.asList(buffers)
+                            .stream()
+                            .mapToLong(Buffer::limit).sum();
+                }).orElse(0L);
+    }
+
+    private String getInputStream(String audioUrl, AtomicLong total) throws IOException {
+        Response response = YoutubeRetrofitUtils
+                .getOkHttpClient().newCall(new Request.Builder()
+                        .url(audioUrl)
+                        .build()).execute();
+        ResponseBody responseBody = response.body();
+        long length = responseBody.contentLength();
+
+        total.addAndGet(length);
+        responseBody.close();
+        response.close();
+        return DownloadUtils.getUrl(audioUrl);
+    }
+
+    private void downloadAndMerge(HandlerContext handlerContext, String fileName, YtFile audioFile, YtFile videoFile, Map<String, Object> data, Object originUrl, DefaultPipeline defaultPipeline, File sourceAudioFile, File sourceVideoFile, File targetFile, File targetFileMp3, DownloaderController downloaderController, CountDownLatch countDownLatch, AtomicLong total, AtomicLong current) throws Exception {
         Runnable mp3Runnable = () -> {
             try {
                 String audio = "audio";
@@ -169,7 +340,6 @@ public class YoutubeDownloaderHandler extends AbstractRetryHandler {
         //
         System.out.println("完成： " + fileName + "=" + audioFile.getUrl());
         Arrays.asList(sourceAudioFile, sourceVideoFile).forEach(File::delete);
-
     }
 
     private void handleException(DownloaderController downloaderController, File... sourceFile) throws NoRetryExcetion {

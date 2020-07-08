@@ -34,6 +34,7 @@
         <module>huanmusic</module>
         <module>kugeci</module>
         <module>bilibili</module>
+        <module>acfun</module>
     </modules>
 
     <dependencies>

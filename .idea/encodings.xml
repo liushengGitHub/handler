@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/acfun/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/acfun/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/bilibili/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/bilibili/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/common-javafx/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/common-javafx/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/common/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/common/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dailymotion/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dailymotion/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/gulixueyuan/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/gulixueyuan/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/http/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/http/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/huanmusic/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/huanmusic/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/instagram/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/instagram/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/kugeci/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/kugeci/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/soundcloud/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/soundcloud/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/youtube-javafx/1.lrc" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/youtube-javafx/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/youtube-javafx/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/youtube-javafx/src/main/resources/1.lrc" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/youtube/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/youtube/src/main/resources" charset="UTF-8" />
+  </component>
+</project>
